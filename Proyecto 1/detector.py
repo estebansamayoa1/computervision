@@ -8,6 +8,13 @@ import joblib
 
 
 def crop_image(img):
+    """
+    Esta función se usa para cortar la imagen y que solo se enfoque en la placa, 
+    asi no tiene que hacer contornos de cosas innecesarias.
+    Hace contornos de toda la imagen de rectangulos y encuentra el rectangulo más claro
+    o brillante, que sería la placa por ser blanca y retorna la imagen cortada en la placa para 
+    encontrar los contornos más facilmente
+    """
     blurred = cv.GaussianBlur(img, (5, 5), 0)
     edges = cv.Canny(blurred, 50, 150)
     contours, _ = cv.findContours(edges, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
@@ -31,6 +38,10 @@ def crop_image(img):
 
 
 def shadow_remove(img):
+    """
+    Esta es una función que permite reducir las sombras en la imagen, para que sea más claro y 
+    fácil encontrar los contornos de cada letra. 
+    """
     rgb_planes = cv.split(img)
     result_norm_planes = []
     for plane in rgb_planes:
@@ -53,6 +64,11 @@ def thresholding(img):
     return binary_image
 
 def find_contours(binary_img, cropped_img):
+    """
+    Aquí encuentra los contornos de los objetos y los discrimina bajo un porcentaje de la imagen que en 
+    este caso serían las letras de las placas, luego los guarda en un arreglo de aprovados para 
+    enviarlos a una función que genera una subimagen de cada una de las letras de la placa.
+    """
     edges = cv.Canny(binary_img, 50, 150)
     contours, _ = cv.findContours(edges.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE) 
     approved=()
@@ -90,6 +106,11 @@ def find_contours(binary_img, cropped_img):
     return subimages
 
 def predict_y(subimages, random_f):
+    """
+    Se envían las subimagenes para que pueda predecir el valor de cada una usando un Random Forest,
+    ya entrenado por un dataset de letras de placas. Lo guarda en un arreglo y luego como texto para
+    poder enviar a la imagen.
+    """
     valores=[]
     values=""
     for image in subimages:
@@ -102,6 +123,10 @@ def predict_y(subimages, random_f):
     return values
 
 def process_final_img(path, values):
+    """
+    Esta función procesa la imagen original y le agrega el texto generado por los valores predichos
+    y encierra en un rectangulo el area de la placa para mostrarla al final.
+    """
     img=cvlib.imgread(path)
     blurred = cv.GaussianBlur(img, (5, 5), 0)
     edges = cv.Canny(blurred, 50, 150)
@@ -132,6 +157,12 @@ def process_final_img(path, values):
 
 
 def main():
+    """
+    El main manda a llamar todas las funciones y recibe como parametro el path de la imagen,
+    para luego poder procesarla enviarla a todas las funciones y generar la imagen final.
+    Aquí se carga el joblib file que contiene el Random Forest ya entrenado para poder predecir los
+    valores en las placas.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--p", "--path", required=True, help="Path to the image file")
     args = parser.parse_args()
